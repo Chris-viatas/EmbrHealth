@@ -1,18 +1,16 @@
-//
-//  EmbrHealthApp.swift
-//  EmbrHealth
-//
-//  Created by Christopher Hardin on 10/29/25.
-//
-
 import SwiftUI
 import SwiftData
 
 @main
 struct EmbrHealthApp: App {
+    @StateObject private var healthSyncViewModel = HealthSyncViewModel()
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            HealthMetric.self,
+            Goal.self,
+            Workout.self,
+            UserProfile.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -26,6 +24,7 @@ struct EmbrHealthApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(healthSyncViewModel)
         }
         .modelContainer(sharedModelContainer)
     }
