@@ -294,6 +294,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EmbrHealth/Info.plist;
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This application may use personal health records to enable non-clinical medical health and fitness suggestions to the user. User should consult a medical processional for advice regarding information provided by the application. Application information will not be used to provide a clinical diagnosis and should be used to take any suggested prescription medications.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -328,6 +329,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = EmbrHealth/Info.plist;
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "This application may use personal health records to enable non-clinical medical health and fitness suggestions to the user. User should consult a medical processional for advice regarding information provided by the application. Application information will not be used to provide a clinical diagnosis and should be used to take any suggested prescription medications.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
