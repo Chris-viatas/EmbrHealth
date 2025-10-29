@@ -2,14 +2,14 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>remote-notification</string>
-		<string>processing</string>
-		<string>location</string>
-		<string>external-accessory</string>
-		<string>fetch</string>
-		<string>nearby-interaction</string>
-	</array>
+    <key>NSHealthShareUsageDescription</key>
+    <string>EmbrHealth uses your Health data to display activity insights and personalized trends.</string>
+    <key>NSHealthUpdateUsageDescription</key>
+    <string>EmbrHealth writes goal progress you choose to log back into Health to keep everything in sync.</string>
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>fetch</string>
+        <string>healthkit</string>
+    </array>
 </dict>
 </plist>
