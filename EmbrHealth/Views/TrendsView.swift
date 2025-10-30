@@ -14,6 +14,9 @@ struct TrendsView: View {
             VStack(alignment: .leading, spacing: 24) {
                 activityChartSection
                 energyChartSection
+                heartRateSection
+                sleepSection
+                vo2Section
                 workoutHistorySection
             }
             .padding(.horizontal)
@@ -76,6 +79,142 @@ struct TrendsView: View {
         }
     }
 
+    private var heartRateSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Heart Rate", systemImage: "waveform.path.ecg")
+                .font(.headline)
+            if metrics.isEmpty {
+                ContentUnavailableView("No heart rate data", systemImage: "heart.slash", description: Text("Grant access to Heart data to view resting and peak trends."))
+            } else {
+                Chart {
+                    ForEach(metrics.chronologicallyAscending) { metric in
+                        if let resting = metric.restingHeartRate {
+                            LineMark(
+                                x: .value("Date", metric.date, unit: .day),
+                                y: .value("Resting", resting)
+                            )
+                            .foregroundStyle(by: .value("Series", "Resting"))
+                            .interpolationMethod(.catmullRom)
+                        }
+                        if let max = metric.maxHeartRate {
+                            LineMark(
+                                x: .value("Date", metric.date, unit: .day),
+                                y: .value("Max", max)
+                            )
+                            .foregroundStyle(by: .value("Series", "Peak"))
+                            .interpolationMethod(.catmullRom)
+                        }
+                    }
+                }
+                .frame(height: 200)
+                .chartLegend(position: .bottom)
+                .chartForegroundStyleScale([
+                    "Resting": .green,
+                    "Peak": .red
+                ])
+                Text("Resting heart rate between \(Int(WellnessBenchmarks.restingHeartRateRange.lowerBound))–\(Int(WellnessBenchmarks.restingHeartRateRange.upperBound)) bpm is typical for healthy adults. Consult a clinician for readings outside your norm.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var sleepSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Sleep Quality", systemImage: "bed.double")
+                .font(.headline)
+            if metrics.isEmpty {
+                ContentUnavailableView("No sleep tracked", systemImage: "zzz", description: Text("Sleep data from Health will appear here."))
+            } else {
+                Chart {
+                    ForEach(metrics.chronologicallyAscending) { metric in
+                        if let hours = metric.sleepHours {
+                            BarMark(
+                                x: .value("Date", metric.date, unit: .day),
+                                y: .value("Hours", hours)
+                            )
+                            .foregroundStyle(by: .value("Series", "Sleep Hours"))
+                        }
+                        if let efficiency = metric.sleepEfficiency {
+                            LineMark(
+                                x: .value("Date", metric.date, unit: .day),
+                                y: .value("Efficiency", efficiency * 100)
+                            )
+                            .foregroundStyle(by: .value("Series", "Efficiency %"))
+                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
+                            .yAxis(.trailing)
+                        }
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+                .chartYAxis(.trailing) {
+                    AxisMarks { value in
+                        if let percent = value.as(Double.self) {
+                            AxisValueLabel("\(percent.formatted(.number.precision(.fractionLength(0))))%")
+                        }
+                    }
+                }
+                .frame(height: 200)
+                .chartLegend(position: .bottom)
+                .chartForegroundStyleScale([
+                    "Sleep Hours": Color.indigo.opacity(0.7),
+                    "Efficiency %": .orange
+                ])
+                Text("Target \(WellnessBenchmarks.recommendedSleepHours.lowerBound.formatted(.number.precision(.fractionLength(1))))–\(WellnessBenchmarks.recommendedSleepHours.upperBound.formatted(.number.precision(.fractionLength(1)))) hours per night for optimal recovery.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var vo2Section: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("VO₂ Max", systemImage: "lungs")
+                .font(.headline)
+            if metrics.isEmpty {
+                ContentUnavailableView("No VO₂ Max samples", systemImage: "lungs.slash", description: Text("Cardiorespiratory fitness readings appear once captured by your Apple Watch."))
+            } else {
+                Chart {
+                    ForEach(metrics.chronologicallyAscending) { metric in
+                        if let value = metric.vo2Max {
+                            LineMark(
+                                x: .value("Date", metric.date, unit: .day),
+                                y: .value("VO₂", value)
+                            )
+                            .foregroundStyle(by: .value("Series", "VO₂ Max"))
+                        }
+                    }
+                    RuleMark(y: .value("Healthy Minimum", WellnessBenchmarks.vo2HealthyRange.lowerBound))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                        .foregroundStyle(.gray)
+                        .annotation(position: .leading) {
+                            Text("Healthy min")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    RuleMark(y: .value("Healthy Upper", WellnessBenchmarks.vo2HealthyRange.upperBound))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 2]))
+                        .foregroundStyle(.gray.opacity(0.6))
+                        .annotation(position: .trailing) {
+                            Text("Healthy max")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                }
+                .frame(height: 200)
+                .chartLegend(position: .bottom)
+                .chartForegroundStyleScale([
+                    "VO₂ Max": .mint
+                ])
+                Text("Healthy VO₂ Max range is approximated for moderately active adults. Your optimal target may vary—discuss changes with a clinician.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private var workoutHistorySection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Recent Workouts", systemImage: "figure.run")
@@ -91,6 +230,12 @@ struct TrendsView: View {
                 }
             }
         }
+    }
+}
+
+private extension Collection where Element == HealthMetric {
+    var chronologicallyAscending: [HealthMetric] {
+        sorted(by: { $0.date < $1.date })
     }
 }
 

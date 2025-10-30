@@ -27,6 +27,13 @@ struct ContentView: View {
             }
 
             NavigationStack {
+                CoachView()
+            }
+            .tabItem {
+                Label("Coach", systemImage: "person.text.rectangle")
+            }
+
+            NavigationStack {
                 SettingsView()
             }
             .tabItem {

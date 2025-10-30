@@ -9,7 +9,10 @@ final class HealthMetric {
     var activeMinutes: Int
     var distance: Double?
     var restingHeartRate: Double?
+    var maxHeartRate: Double?
     var sleepHours: Double?
+    var sleepEfficiency: Double?
+    var vo2Max: Double?
     var lastUpdatedAt: Date
 
     init(
@@ -19,7 +22,10 @@ final class HealthMetric {
         activeMinutes: Int,
         distance: Double? = nil,
         restingHeartRate: Double? = nil,
+        maxHeartRate: Double? = nil,
         sleepHours: Double? = nil,
+        sleepEfficiency: Double? = nil,
+        vo2Max: Double? = nil,
         lastUpdatedAt: Date = .now
     ) {
         self.date = date
@@ -28,7 +34,10 @@ final class HealthMetric {
         self.activeMinutes = activeMinutes
         self.distance = distance
         self.restingHeartRate = restingHeartRate
+        self.maxHeartRate = maxHeartRate
         self.sleepHours = sleepHours
+        self.sleepEfficiency = sleepEfficiency
+        self.vo2Max = vo2Max
         self.lastUpdatedAt = lastUpdatedAt
     }
 }

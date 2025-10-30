@@ -141,24 +141,54 @@ struct DashboardView: View {
     }
 }
 
-private struct MetricSummaryCard: View {
-    let metric: HealthMetric
+    private struct MetricSummaryCard: View {
+        let metric: HealthMetric
 
-    private var distanceText: String {
-        if let distance = metric.distance {
-            let formatter = MeasurementFormatter()
-            formatter.unitOptions = .providedUnit
-            formatter.unitStyle = .short
-            let measurement = Measurement(value: distance, unit: UnitLength.kilometers)
-            return formatter.string(from: measurement)
+        private var distanceText: String {
+            if let distance = metric.distance {
+                let formatter = MeasurementFormatter()
+                formatter.unitOptions = .providedUnit
+                formatter.unitStyle = .short
+                let measurement = Measurement(value: distance, unit: UnitLength.kilometers)
+                return formatter.string(from: measurement)
+            }
+            return "—"
         }
-        return "—"
-    }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Label("Today", systemImage: "sun.max.fill")
-                .font(.headline)
+        private var restingHeartRateText: String {
+            if let value = metric.restingHeartRate {
+                return "\(Int(value.rounded())) bpm"
+            }
+            return "—"
+        }
+
+        private var maxHeartRateText: String {
+            if let value = metric.maxHeartRate {
+                return "\(Int(value.rounded())) bpm"
+            }
+            return "—"
+        }
+
+        private var sleepText: String {
+            guard let hours = metric.sleepHours else { return "—" }
+            let efficiency = metric.sleepEfficiency.map { NumberFormatter.percent.string(from: NSNumber(value: $0)) }
+            if let efficiency {
+                return "\(hours.formatted(.number.precision(.fractionLength(1)))) h • \(efficiency)"
+            }
+            return "\(hours.formatted(.number.precision(.fractionLength(1)))) h"
+        }
+
+        private var vo2MaxText: String {
+            if let value = metric.vo2Max {
+                return "\(value.formatted(.number.precision(.fractionLength(1)))) ml/kg·min"
+            }
+            return "—"
+        }
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 16) {
+                Label("Today", systemImage: "sun.max.fill")
+                    .font(.headline)
             HStack(spacing: 16) {
                 MetricPill(title: "Steps", value: "\(metric.stepCount.formatted())", systemImage: "figure.walk")
                 MetricPill(title: "Energy", value: "\(metric.activeEnergy.formatted(.number.precision(.fractionLength(0)))) kcal", systemImage: "flame.fill")
@@ -166,6 +196,14 @@ private struct MetricSummaryCard: View {
             HStack(spacing: 16) {
                 MetricPill(title: "Active", value: "\(metric.activeMinutes) min", systemImage: "clock.badge")
                 MetricPill(title: "Distance", value: distanceText, systemImage: "map")
+            }
+            HStack(spacing: 16) {
+                MetricPill(title: "Resting HR", value: restingHeartRateText, systemImage: "heart")
+                MetricPill(title: "Max HR", value: maxHeartRateText, systemImage: "waveform.path.ecg")
+            }
+            HStack(spacing: 16) {
+                MetricPill(title: "Sleep", value: sleepText, systemImage: "bed.double.fill")
+                MetricPill(title: "VO₂ Max", value: vo2MaxText, systemImage: "lungs.fill")
             }
             Text("Last updated \(metric.lastUpdatedAt, format: Date.FormatStyle(date: .omitted, time: .shortened))")
                 .font(.footnote)
@@ -199,6 +237,15 @@ private struct MetricPill: View {
         .padding()
         .background(Color(.systemBackground).opacity(0.9), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
+}
+
+private extension NumberFormatter {
+    static let percent: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .percent
+        formatter.maximumFractionDigits = 0
+        return formatter
+    }()
 }
 
 private struct GoalProgressRow: View {
