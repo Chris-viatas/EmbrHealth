@@ -10,7 +10,8 @@ struct EmbrHealthApp: App {
             HealthMetric.self,
             Goal.self,
             Workout.self,
-            UserProfile.self
+            UserProfile.self,
+            PrivacySettings.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

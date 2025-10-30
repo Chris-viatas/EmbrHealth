@@ -71,6 +71,11 @@ final class HealthSyncViewModel: ObservableObject {
             existing.activeEnergy = summary.activeEnergy
             existing.activeMinutes = summary.exerciseMinutes
             existing.distance = summary.distance
+            existing.restingHeartRate = summary.restingHeartRate
+            existing.maxHeartRate = summary.maxHeartRate
+            existing.sleepHours = summary.sleepHours
+            existing.sleepEfficiency = summary.sleepEfficiency
+            existing.vo2Max = summary.vo2Max
             existing.lastUpdatedAt = .now
         } else {
             let metric = HealthMetric(
@@ -79,6 +84,11 @@ final class HealthSyncViewModel: ObservableObject {
                 activeEnergy: summary.activeEnergy,
                 activeMinutes: summary.exerciseMinutes,
                 distance: summary.distance,
+                restingHeartRate: summary.restingHeartRate,
+                maxHeartRate: summary.maxHeartRate,
+                sleepHours: summary.sleepHours,
+                sleepEfficiency: summary.sleepEfficiency,
+                vo2Max: summary.vo2Max,
                 lastUpdatedAt: .now
             )
             context.insert(metric)

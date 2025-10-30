@@ -7,7 +7,8 @@ enum PreviewSampleData {
             HealthMetric.self,
             Goal.self,
             Workout.self,
-            UserProfile.self
+            UserProfile.self,
+            PrivacySettings.self
         ])
         let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
         let container = try! ModelContainer(for: schema, configurations: [configuration])
@@ -16,6 +17,7 @@ enum PreviewSampleData {
             seedMetrics(in: context)
             seedGoals(in: context)
             seedWorkouts(in: context)
+            seedPrivacySettings(in: context)
         }
         return container
     }
@@ -31,6 +33,11 @@ enum PreviewSampleData {
                     activeEnergy: Double.random(in: 350...650),
                     activeMinutes: Int.random(in: 20...60),
                     distance: Double.random(in: 3.5...8.5),
+                    restingHeartRate: Double.random(in: 52...64),
+                    maxHeartRate: Double.random(in: 140...165),
+                    sleepHours: Double.random(in: 6.5...8.5),
+                    sleepEfficiency: Double.random(in: 0.82...0.94),
+                    vo2Max: Double.random(in: 38...45),
                     lastUpdatedAt: .now
                 )
                 context.insert(metric)
@@ -67,6 +74,13 @@ enum PreviewSampleData {
             )
             context.insert(workout)
         }
+        try? context.save()
+    }
+
+    @MainActor
+    private static func seedPrivacySettings(in context: ModelContext) {
+        let settings = PrivacySettings(allowsWellnessAI: true, privacyNoticeAcceptedAt: .now, ccpaDoNotSell: true)
+        context.insert(settings)
         try? context.save()
     }
 }
