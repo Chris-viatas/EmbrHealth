@@ -1,8 +1,10 @@
+import Combine
 import Foundation
 import SwiftData
 
 @MainActor
 final class HealthSyncViewModel: ObservableObject {
+    nonisolated let objectWillChange = ObservableObjectPublisher()
     enum AuthorizationState {
         case unknown
         case authorized
@@ -17,7 +19,7 @@ final class HealthSyncViewModel: ObservableObject {
 
     private let manager: HealthKitManager
 
-    init(manager: HealthKitManager = HealthKitManager()) {
+    init(manager: HealthKitManager) {
         self.manager = manager
         authorizationState = manager.isHealthDataAvailable() ? .unknown : .unavailable
     }

@@ -3,7 +3,7 @@ import SwiftData
 
 @main
 struct EmbrHealthApp: App {
-    @StateObject private var healthSyncViewModel = HealthSyncViewModel()
+    @StateObject private var healthSyncViewModel = HealthSyncViewModel(manager: HealthKitManager())
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([

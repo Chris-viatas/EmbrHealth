@@ -218,7 +218,7 @@ private extension Bundle {
 #Preview {
     NavigationStack {
         SettingsView()
-            .environmentObject(HealthSyncViewModel())
+            .environmentObject(HealthSyncViewModel(manager: HealthKitManager()))
     }
     .modelContainer(PreviewSampleData.makeContainer())
 }

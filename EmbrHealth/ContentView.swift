@@ -46,6 +46,6 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .environmentObject(HealthSyncViewModel())
+        .environmentObject(HealthSyncViewModel(manager: HealthKitManager()))
         .modelContainer(PreviewSampleData.makeContainer())
 }

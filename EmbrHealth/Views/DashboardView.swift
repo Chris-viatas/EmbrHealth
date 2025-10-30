@@ -273,7 +273,7 @@ private struct GoalProgressRow: View {
 #Preview {
     NavigationStack {
         DashboardView()
-            .environmentObject(HealthSyncViewModel())
+            .environmentObject(HealthSyncViewModel(manager: HealthKitManager()))
     }
     .modelContainer(PreviewSampleData.makeContainer())
 }
