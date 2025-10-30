@@ -3,14 +3,15 @@ import SwiftData
 
 @main
 struct EmbrHealthApp: App {
-    @StateObject private var healthSyncViewModel = HealthSyncViewModel()
+    @StateObject private var healthSyncViewModel = HealthSyncViewModel(manager: HealthKitManager())
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             HealthMetric.self,
             Goal.self,
             Workout.self,
-            UserProfile.self
+            UserProfile.self,
+            PrivacySettings.self
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
