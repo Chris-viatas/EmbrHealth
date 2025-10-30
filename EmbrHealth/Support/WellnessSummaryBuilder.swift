@@ -74,8 +74,8 @@ struct WellnessSnapshot {
 
 struct WellnessSummaryBuilder {
     func snapshot(metrics: [HealthMetric], goals: [Goal], workouts: [Workout]) -> WellnessSnapshot {
-        let observationWindow = metrics.isEmpty ? 0 : max(cappedMetrics.count, 1)
         let cappedMetrics = Array(metrics.sorted(by: { $0.date > $1.date }).prefix(30))
+        let observationWindow = cappedMetrics.isEmpty ? 0 : max(cappedMetrics.count, 1)
         let stepAverage = cappedMetrics.map { Double($0.stepCount) }.averageValue()
         let energyAverage = cappedMetrics.map(\.activeEnergy).averageValue()
         let exerciseAverage = cappedMetrics.map { Double($0.activeMinutes) }.averageValue()
