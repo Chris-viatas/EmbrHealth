@@ -18,7 +18,7 @@ final class HealthKitManager {
 
     func isHealthDataAvailable() -> Bool {
         #if canImport(HealthKit)
-        HKHealthStore.isHealthDataAvailable()
+        return HKHealthStore.isHealthDataAvailable()
         #else
         return true
         #endif
