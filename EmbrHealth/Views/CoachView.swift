@@ -164,7 +164,5 @@ private struct ChatBubble: View {
 
     .environmentObject(HealthSyncViewModel(manager: HealthKitManager()))
 
-    .environmentObject(HealthSyncViewModel())
-
     .modelContainer(PreviewSampleData.makeContainer())
 }
