@@ -19,7 +19,7 @@ struct WellnessAIService {
     }
 
     var apiKeyProvider: () -> String? = {
-        ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
+        ProcessInfo.processInfo.environment["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"]
     }
 
     var urlSession: URLSession = .shared
@@ -156,6 +156,55 @@ private struct ResponsesCompletion: Decodable {
 
     var primaryOutputText: String? {
         outputText?.joined()
+    }
+
+    var concatenatedOutput: String? {
+        let combined = output
+            .flatMap { $0.content }
+            .compactMap { $0.text }
+            .joined(separator: "\n")
+        return combined.isEmpty ? nil : combined
+    }
+}
+
+private struct InputMessage: Encodable {
+    let role: String
+    let content: [MessageContent]
+
+    struct MessageContent: Encodable {
+        let type: String
+        let text: String
+
+        static func text(_ value: String) -> MessageContent {
+            MessageContent(type: "input_text", text: value)
+        }
+    }
+
+    init(role: String, content: [MessageContent]) {
+        self.role = role
+        self.content = content
+    }
+}
+
+private struct ResponsesCompletion: Decodable {
+    struct Output: Decodable {
+        struct Content: Decodable {
+            let type: String
+            let text: String?
+        }
+        let content: [Content]
+    }
+
+    let output: [Output]
+    let outputText: String?
+
+    enum CodingKeys: String, CodingKey {
+        case output
+        case outputText = "output_text"
+    }
+
+    var primaryOutputText: String? {
+        outputText
     }
 
     var concatenatedOutput: String? {
