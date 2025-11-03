@@ -169,9 +169,9 @@ struct DashboardView: View {
 
         private var sleepText: String {
             guard let hours = metric.sleepHours else { return "—" }
-            let efficiency = metric.sleepEfficiency.map { NumberFormatter.percent.string(from: NSNumber(value: $0)) }
+            let efficiency = metric.sleepEfficiency.flatMap { NumberFormatter.percent.string(from: NSNumber(value: $0)) }
             if let efficiency {
-                return "\(hours.formatted(.number.precision(.fractionLength(1)))) h • \(efficiency)"
+              return "\(hours.formatted(.number.precision(.fractionLength(1)))) h • \(efficiency)"
             }
             return "\(hours.formatted(.number.precision(.fractionLength(1)))) h"
         }
