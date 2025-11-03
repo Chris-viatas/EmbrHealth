@@ -149,6 +149,7 @@ struct TrendsView: View {
                             .foregroundStyle(by: .value("Series", "Efficiency %"))
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
                             .position(by: .value("Axis", "Efficiency"))
+                            .position(by: .value("Axis", "Efficiency"), axis: .trailing)
                         }
                     }
                 }
@@ -157,6 +158,8 @@ struct TrendsView: View {
                 }
                 .chartYAxis(.value("Axis", "Efficiency")) {
                     AxisMarks(position: .trailing) { value in
+                .chartYAxis(position: .trailing) {
+                    AxisMarks { value in
                         if let percent = value.as(Double.self) {
                             AxisValueLabel("\(percent.formatted(.number.precision(.fractionLength(0))))%")
                         }
