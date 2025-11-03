@@ -19,34 +19,7 @@ struct WellnessAIService {
     }
 
     var apiKeyProvider: () -> String? = {
-        if let environmentKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !environmentKey.isEmpty {
-            return environmentKey
-        }
-
-        let bundle = Bundle.main
-        let infoDictionaryCandidates = ["OPENAI_API_KEY", "OpenAIAPIKey", "WellnessCoachAPIKey"]
-        for key in infoDictionaryCandidates {
-            if let value = bundle.object(forInfoDictionaryKey: key) as? String, !value.isEmpty {
-                return value
-            }
-        }
-
-        let secretsFileCandidates = ["Secrets", "CoachSecrets", "WellnessSecrets"]
-        for resourceName in secretsFileCandidates {
-            if let secretsURL = bundle.url(forResource: resourceName, withExtension: "plist"),
-               let data = try? Data(contentsOf: secretsURL),
-               let propertyList = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
-               let dictionary = propertyList as? [String: Any] {
-                for key in infoDictionaryCandidates {
-                    if let value = dictionary[key] as? String, !value.isEmpty {
-                        return value
-                    }
-                }
-            }
-        }
-
-        return nil
-        ProcessInfo.processInfo.environment["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"]
+        ProcessInfo.processInfo.environment["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"]
     }
 
     var urlSession: URLSession = .shared
@@ -183,57 +156,6 @@ private struct ResponsesCompletion: Decodable {
 
     var primaryOutputText: String? {
         outputText?.joined()
-    }
-
-    var concatenatedOutput: String? {
-        let combined = output
-            .flatMap { $0.content }
-            .compactMap { $0.text }
-            .joined(separator: "\n")
-        return combined.isEmpty ? nil : combined
-    }
-}
-
-private struct InputMessage: Encodable {
-    let role: String
-    let content: [MessageContent]
-
-    struct MessageContent: Encodable {
-        let type: String
-        let text: String
-
-        static func text(_ value: String) -> MessageContent {
-            MessageContent(type: "input_text", text: value)
-        }
-    }
-
-    init(role: String, content: [MessageContent]) {
-        self.role = role
-        self.content = content
-    }
-}
-
-private struct ResponsesCompletion: Decodable {
-    struct Output: Decodable {
-        struct Content: Decodable {
-            let type: String
-            let text: String?
-        }
-        let content: [Content]
-    }
-
-    let output: [Output]
-    let outputText: [String]?
-    let outputText: String?
-
-    enum CodingKeys: String, CodingKey {
-        case output
-        case outputText = "output_text"
-    }
-
-    var primaryOutputText: String? {
-        outputText?.joined()
-        outputText
     }
 
     var concatenatedOutput: String? {
