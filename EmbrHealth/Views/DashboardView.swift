@@ -90,12 +90,10 @@ struct DashboardView: View {
             }
             .frame(height: 200)
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day)) { value in
-                    if let date = value.as(Date.self) {
-                        AxisGridLine()
-                        AxisTick()
-                        AxisValueLabel(date, format: .dateTime.weekday(.narrow))
-                    }
+                AxisMarks(values: .stride(by: .day)) { _ in
+                    AxisGridLine()
+                    AxisTick()
+                    AxisValueLabel(format: .dateTime.weekday(.narrow))
                 }
             }
             .chartYAxis {
@@ -205,7 +203,7 @@ struct DashboardView: View {
                 MetricPill(title: "Sleep", value: sleepText, systemImage: "bed.double.fill")
                 MetricPill(title: "VO₂ Max", value: vo2MaxText, systemImage: "lungs.fill")
             }
-            Text("Last updated \(metric.lastUpdatedAt, format: Date.FormatStyle(date: .omitted, time: .shortened))")
+            Text("Last updated \(metric.lastUpdatedAt.formatted(date: .omitted, time: .shortened))")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
         }
@@ -226,7 +224,7 @@ private struct MetricPill: View {
             Label(title, systemImage: systemImage)
                 .labelStyle(.iconOnly)
                 .font(.title3)
-                .foregroundStyle(.accentColor)
+                .foregroundStyle(Color.accentColor)
             Text(value)
                 .font(.headline)
             Text(title)
