@@ -142,7 +142,7 @@ private struct AddGoalSheet: View {
                     }
                 }
             }
-            .onChange(of: category) { newCategory in
+            .onChange(of: category) { oldCategory, newCategory in
                 if title.isEmpty {
                     title = defaultTitle(for: newCategory)
                 }
