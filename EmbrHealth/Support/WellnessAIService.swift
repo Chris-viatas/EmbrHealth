@@ -19,7 +19,7 @@ struct WellnessAIService {
     }
 
     var apiKeyProvider: () -> String? = {
-        ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
+        ProcessInfo.processInfo.environment["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"]
     }
 
     func respond(to userMessage: String, history: [WellnessChatMessage], snapshot: WellnessSnapshot) async throws -> String {
