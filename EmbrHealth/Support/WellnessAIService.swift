@@ -22,6 +22,8 @@ struct WellnessAIService {
         ProcessInfo.processInfo.environment["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"]
     }
 
+    var urlSession: URLSession = .shared
+
     func respond(to userMessage: String, history: [WellnessChatMessage], snapshot: WellnessSnapshot) async throws -> String {
         guard HealthConversationGuard.allows(userMessage) else {
             throw ServiceError.guardrailViolation
@@ -62,7 +64,7 @@ struct WellnessAIService {
         request.httpBody = requestData
 
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
+            let (data, response) = try await urlSession.data(for: request)
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw ServiceError.invalidResponse
             }
@@ -114,6 +116,55 @@ struct WellnessAIService {
 private struct ResponsesPayload: Encodable {
     let model: String
     let input: [InputMessage]
+}
+
+private struct InputMessage: Encodable {
+    let role: String
+    let content: [MessageContent]
+
+    struct MessageContent: Encodable {
+        let type: String
+        let text: String
+
+        static func text(_ value: String) -> MessageContent {
+            MessageContent(type: "input_text", text: value)
+        }
+    }
+
+    init(role: String, content: [MessageContent]) {
+        self.role = role
+        self.content = content
+    }
+}
+
+private struct ResponsesCompletion: Decodable {
+    struct Output: Decodable {
+        struct Content: Decodable {
+            let type: String
+            let text: String?
+        }
+        let content: [Content]
+    }
+
+    let output: [Output]
+    let outputText: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case output
+        case outputText = "output_text"
+    }
+
+    var primaryOutputText: String? {
+        outputText?.joined()
+    }
+
+    var concatenatedOutput: String? {
+        let combined = output
+            .flatMap { $0.content }
+            .compactMap { $0.text }
+            .joined(separator: "\n")
+        return combined.isEmpty ? nil : combined
+    }
 }
 
 private struct InputMessage: Encodable {
