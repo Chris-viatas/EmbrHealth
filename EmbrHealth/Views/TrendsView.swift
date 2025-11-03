@@ -39,6 +39,9 @@ struct TrendsView: View {
                 let orderedMetrics = ascendingMetrics
                 Chart {
                     ForEach(orderedMetrics, id: \.date) { metric in
+                let orderedMetrics = metrics.chronologicallyAscending
+                Chart {
+                    ForEach(Array(orderedMetrics.enumerated()), id: \.offset) { _, metric in
                         BarMark(
                             x: .value("Date", metric.date, unit: .day),
                             y: .value("Steps", metric.stepCount)
@@ -70,6 +73,9 @@ struct TrendsView: View {
                 let orderedMetrics = ascendingMetrics
                 Chart {
                     ForEach(orderedMetrics, id: \.date) { metric in
+                let orderedMetrics = metrics.chronologicallyAscending
+                Chart {
+                    ForEach(Array(orderedMetrics.enumerated()), id: \.offset) { _, metric in
                         AreaMark(
                             x: .value("Date", metric.date, unit: .day),
                             y: .value("Energy", metric.activeEnergy)
@@ -98,6 +104,7 @@ struct TrendsView: View {
             } else {
                 Chart {
                     ForEach(ascendingMetrics, id: \.date) { metric in
+                    ForEach(Array(metrics.chronologicallyAscending.enumerated()), id: \.offset) { _, metric in
                         if let resting = metric.restingHeartRate {
                             LineMark(
                                 x: .value("Date", metric.date, unit: .day),
@@ -138,6 +145,7 @@ struct TrendsView: View {
             } else {
                 Chart {
                     ForEach(ascendingMetrics, id: \.date) { metric in
+                    ForEach(Array(metrics.chronologicallyAscending.enumerated()), id: \.offset) { _, metric in
                         if let hours = metric.sleepHours {
                             BarMark(
                                 x: .value("Date", metric.date, unit: .day),
@@ -153,6 +161,7 @@ struct TrendsView: View {
                             .foregroundStyle(by: .value("Series", "Efficiency %"))
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
                             .position(by: .value("Axis", "Efficiency"))
+                            .position(by: .value("Axis", "Efficiency"), axis: .trailing)
                         }
                     }
                 }
@@ -161,6 +170,8 @@ struct TrendsView: View {
                 }
                 .chartYAxis(.value("Axis", "Efficiency")) {
                     AxisMarks(position: .trailing) { value in
+                .chartYAxis(position: .trailing) {
+                    AxisMarks { value in
                         if let percent = value.as(Double.self) {
                             AxisValueLabel("\(percent.formatted(.number.precision(.fractionLength(0))))%")
                         }
@@ -188,6 +199,7 @@ struct TrendsView: View {
             } else {
                 Chart {
                     ForEach(ascendingMetrics, id: \.date) { metric in
+                    ForEach(Array(metrics.chronologicallyAscending.enumerated()), id: \.offset) { _, metric in
                         if let value = metric.vo2Max {
                             LineMark(
                                 x: .value("Date", metric.date, unit: .day),
