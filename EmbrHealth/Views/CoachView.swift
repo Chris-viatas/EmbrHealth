@@ -80,8 +80,8 @@ struct CoachView: View {
                     }
                     .padding()
                 }
-                .onChange(of: viewModel.messages) { _ in
-                    if let last = viewModel.messages.last {
+                .onChange(of: viewModel.messages) { oldMessages, newMessages in
+                    if let last = newMessages.last {
                         withAnimation(.easeInOut) {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
