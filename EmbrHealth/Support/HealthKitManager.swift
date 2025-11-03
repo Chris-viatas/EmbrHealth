@@ -196,14 +196,14 @@ final class HealthKitManager {
                     inBedSeconds += duration
 
                     let value = sample.value
-                    if value == HKCategoryValueSleepAnalysis.asleep.rawValue {
-                        asleepSeconds += duration
-                    } else if #available(iOS 16.0, *) {
-                        if value == HKCategoryValueSleepAnalysis.asleepREM.rawValue ||
-                            value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
-                            value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue {
+                    if #available(iOS 16.0, *) {
+                        if value == HKCategoryValueSleepAnalysis.asleepCore.rawValue ||
+                            value == HKCategoryValueSleepAnalysis.asleepDeep.rawValue ||
+                            value == HKCategoryValueSleepAnalysis.asleepREM.rawValue {
                             asleepSeconds += duration
                         }
+                    } else if value == HKCategoryValueSleepAnalysis.asleep.rawValue {
+                        asleepSeconds += duration
                     }
                 }
 
