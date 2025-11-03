@@ -40,22 +40,22 @@ struct WellnessAIService {
         You are EmbrHealth Coach, an empathetic health and wellness assistant. Provide educational, non-diagnostic guidance grounded in the supplied activity, heart rate, sleep, and VO₂ max summaries. Encourage healthy habits, hydration, recovery, and consult-a-professional language. Never store or request personally identifiable information and never discuss topics unrelated to personal wellness.
         """
 
-        var messagesPayload: [[String: String]] = [
-            ["role": "system", "content": systemPrompt],
-            ["role": "system", "content": "Context summary:\n\(snapshot.sanitizedContext())"]
+        var inputMessages: [InputMessage] = [
+            InputMessage(role: "system", content: [.text(systemPrompt)]),
+            InputMessage(role: "system", content: [.text("Context summary:\n\(snapshot.sanitizedContext())")])
         ]
 
         scrubbedHistory.forEach { message in
             let role = message.sender == .user ? "user" : "assistant"
-            messagesPayload.append(["role": role, "content": message.text])
+            inputMessages.append(InputMessage(role: role, content: [.text(message.text)]))
         }
 
-        messagesPayload.append(["role": "user", "content": scrubbedInput])
+        inputMessages.append(InputMessage(role: "user", content: [.text(scrubbedInput)]))
 
-        let payload = ChatPayload(model: "gpt-4.1-mini", messages: messagesPayload)
+        let payload = ResponsesPayload(model: "gpt-4.1", input: inputMessages)
         let requestData = try JSONEncoder().encode(payload)
 
-        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+        var request = URLRequest(url: URL(string: "https://api.openai.com/v1/responses")!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -70,9 +70,12 @@ struct WellnessAIService {
                 let message = String(data: data, encoding: .utf8) ?? "Unexpected error"
                 throw ServiceError.networkFailure(message)
             }
-            let decoded = try JSONDecoder().decode(ChatCompletionResponse.self, from: data)
-            if let content = decoded.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines), !content.isEmpty {
+            let decoded = try JSONDecoder().decode(ResponsesCompletion.self, from: data)
+            if let content = decoded.primaryOutputText?.trimmingCharacters(in: .whitespacesAndNewlines), !content.isEmpty {
                 return content
+            }
+            if let fallbackText = decoded.concatenatedOutput?.trimmingCharacters(in: .whitespacesAndNewlines), !fallbackText.isEmpty {
+                return fallbackText
             }
             throw ServiceError.invalidResponse
         } catch {
@@ -108,17 +111,56 @@ struct WellnessAIService {
     }
 }
 
-private struct ChatPayload: Encodable {
+private struct ResponsesPayload: Encodable {
     let model: String
-    let messages: [[String: String]]
+    let input: [InputMessage]
 }
 
-private struct ChatCompletionResponse: Decodable {
-    struct Choice: Decodable {
-        struct Message: Decodable {
-            let content: String
+private struct InputMessage: Encodable {
+    let role: String
+    let content: [MessageContent]
+
+    struct MessageContent: Encodable {
+        let type: String
+        let text: String
+
+        static func text(_ value: String) -> MessageContent {
+            MessageContent(type: "input_text", text: value)
         }
-        let message: Message
     }
-    let choices: [Choice]
+
+    init(role: String, content: [MessageContent]) {
+        self.role = role
+        self.content = content
+    }
+}
+
+private struct ResponsesCompletion: Decodable {
+    struct Output: Decodable {
+        struct Content: Decodable {
+            let type: String
+            let text: String?
+        }
+        let content: [Content]
+    }
+
+    let output: [Output]
+    let outputText: String?
+
+    enum CodingKeys: String, CodingKey {
+        case output
+        case outputText = "output_text"
+    }
+
+    var primaryOutputText: String? {
+        outputText
+    }
+
+    var concatenatedOutput: String? {
+        let combined = output
+            .flatMap { $0.content }
+            .compactMap { $0.text }
+            .joined(separator: "\n")
+        return combined.isEmpty ? nil : combined
+    }
 }
