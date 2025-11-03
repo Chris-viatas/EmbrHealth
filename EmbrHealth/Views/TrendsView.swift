@@ -9,6 +9,10 @@ struct TrendsView: View {
     @Query(sort: \Workout.date, order: .reverse, animation: .default)
     private var workouts: [Workout]
 
+    private var ascendingMetrics: [HealthMetric] {
+        metrics.sorted(by: { $0.date < $1.date })
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -32,6 +36,9 @@ struct TrendsView: View {
             if metrics.isEmpty {
                 ContentUnavailableView("No activity yet", systemImage: "shoeprints.fill", description: Text("Start moving to build your history."))
             } else {
+                let orderedMetrics = ascendingMetrics
+                Chart {
+                    ForEach(orderedMetrics, id: \.date) { metric in
                 let orderedMetrics = metrics.chronologicallyAscending
                 Chart {
                     ForEach(Array(orderedMetrics.enumerated()), id: \.offset) { _, metric in
@@ -63,6 +70,9 @@ struct TrendsView: View {
             if metrics.isEmpty {
                 ContentUnavailableView("No energy data", systemImage: "bolt.fill", description: Text("Sync with Health to see your burn."))
             } else {
+                let orderedMetrics = ascendingMetrics
+                Chart {
+                    ForEach(orderedMetrics, id: \.date) { metric in
                 let orderedMetrics = metrics.chronologicallyAscending
                 Chart {
                     ForEach(Array(orderedMetrics.enumerated()), id: \.offset) { _, metric in
@@ -93,6 +103,7 @@ struct TrendsView: View {
                 ContentUnavailableView("No heart rate data", systemImage: "heart.slash", description: Text("Grant access to Heart data to view resting and peak trends."))
             } else {
                 Chart {
+                    ForEach(ascendingMetrics, id: \.date) { metric in
                     ForEach(Array(metrics.chronologicallyAscending.enumerated()), id: \.offset) { _, metric in
                         if let resting = metric.restingHeartRate {
                             LineMark(
@@ -133,6 +144,7 @@ struct TrendsView: View {
                 ContentUnavailableView("No sleep tracked", systemImage: "zzz", description: Text("Sleep data from Health will appear here."))
             } else {
                 Chart {
+                    ForEach(ascendingMetrics, id: \.date) { metric in
                     ForEach(Array(metrics.chronologicallyAscending.enumerated()), id: \.offset) { _, metric in
                         if let hours = metric.sleepHours {
                             BarMark(
@@ -186,6 +198,7 @@ struct TrendsView: View {
                 ContentUnavailableView("No VO₂ Max samples", systemImage: "lungs.slash", description: Text("Cardiorespiratory fitness readings appear once captured by your Apple Watch."))
             } else {
                 Chart {
+                    ForEach(ascendingMetrics, id: \.date) { metric in
                     ForEach(Array(metrics.chronologicallyAscending.enumerated()), id: \.offset) { _, metric in
                         if let value = metric.vo2Max {
                             LineMark(
@@ -239,12 +252,6 @@ struct TrendsView: View {
                 }
             }
         }
-    }
-}
-
-private extension Collection where Element == HealthMetric {
-    var chronologicallyAscending: [HealthMetric] {
-        sorted(by: { $0.date < $1.date })
     }
 }
 
