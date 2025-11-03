@@ -88,6 +88,43 @@ final class WellnessAIServiceTests: XCTestCase {
         let latestUserContent = try XCTUnwrap(latestUser?["content"] as? [[String: Any]])
         XCTAssertTrue(latestUserContent.contains { ($0["text"] as? String)?.contains("improve my stamina") == true })
     }
+
+    func testRespondFallsBackWhenApiKeyUnavailable() async throws {
+        let expectation = XCTestExpectation(description: "No network call should be made")
+        expectation.isInverted = true
+        MockURLProtocol.requestHandler = { _ in
+            expectation.fulfill()
+            let url = URL(string: "https://api.openai.com/v1/responses")!
+            let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
+            return (response, Data())
+        }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+
+        var service = WellnessAIService()
+        service.apiKeyProvider = { nil }
+        service.urlSession = session
+
+        let snapshot = WellnessSnapshot(
+            observationWindowDays: 7,
+            averageSteps: 8000,
+            averageActiveEnergy: 400,
+            averageExerciseMinutes: 30,
+            averageRestingHeartRate: 60,
+            averageMaxHeartRate: 170,
+            averageSleepHours: 7.5,
+            averageSleepEfficiency: 0.9,
+            averageVo2Max: 40,
+            goalStatuses: [],
+            workouts: .init(totalDuration: 0, count: 0, calorieBurn: 0, predominantTypes: [])
+        )
+
+        let response = try await service.respond(to: "How am I doing?", history: [], snapshot: snapshot)
+        XCTAssertTrue(response.hasPrefix("Here's a local summary while the network is offline"))
+        wait(for: [expectation], timeout: 0.1)
+    }
 }
 
 private final class MockURLProtocol: URLProtocol {
