@@ -9,6 +9,10 @@ struct TrendsView: View {
     @Query(sort: \Workout.date, order: .reverse, animation: .default)
     private var workouts: [Workout]
 
+    private var ascendingMetrics: [HealthMetric] {
+        metrics.sorted(by: { $0.date < $1.date })
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
@@ -32,19 +36,22 @@ struct TrendsView: View {
             if metrics.isEmpty {
                 ContentUnavailableView("No activity yet", systemImage: "shoeprints.fill", description: Text("Start moving to build your history."))
             } else {
-                Chart(metrics.sorted(by: { $0.date < $1.date })) { metric in
-                    BarMark(
-                        x: .value("Date", metric.date, unit: .day),
-                        y: .value("Steps", metric.stepCount)
-                    )
-                    .foregroundStyle(.teal.gradient)
-                    if let distance = metric.distance {
-                        LineMark(
+                let orderedMetrics = ascendingMetrics
+                Chart {
+                    ForEach(Array(orderedMetrics.enumerated()), id: \.offset) { _, metric in
+                        BarMark(
                             x: .value("Date", metric.date, unit: .day),
-                            y: .value("Distance", distance)
+                            y: .value("Steps", metric.stepCount)
                         )
-                        .foregroundStyle(.orange)
-                        .symbol(by: .value("Distance", "km"))
+                        .foregroundStyle(.teal.gradient)
+                        if let distance = metric.distance {
+                            LineMark(
+                                x: .value("Date", metric.date, unit: .day),
+                                y: .value("Distance", distance)
+                            )
+                            .foregroundStyle(.orange)
+                            .symbol(by: .value("Distance", "km"))
+                        }
                     }
                 }
                 .frame(height: 220)
@@ -60,18 +67,21 @@ struct TrendsView: View {
             if metrics.isEmpty {
                 ContentUnavailableView("No energy data", systemImage: "bolt.fill", description: Text("Sync with Health to see your burn."))
             } else {
-                Chart(metrics.sorted(by: { $0.date < $1.date })) { metric in
-                    AreaMark(
-                        x: .value("Date", metric.date, unit: .day),
-                        y: .value("Energy", metric.activeEnergy)
-                    )
-                    .foregroundStyle(.pink.gradient.opacity(0.7))
-                    LineMark(
-                        x: .value("Date", metric.date, unit: .day),
-                        y: .value("Active Minutes", metric.activeMinutes)
-                    )
-                    .foregroundStyle(.blue)
-                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [6, 6]))
+                let orderedMetrics = ascendingMetrics
+                Chart {
+                    ForEach(Array(orderedMetrics.enumerated()), id: \.offset) { _, metric in
+                        AreaMark(
+                            x: .value("Date", metric.date, unit: .day),
+                            y: .value("Energy", metric.activeEnergy)
+                        )
+                        .foregroundStyle(.pink.gradient.opacity(0.7))
+                        LineMark(
+                            x: .value("Date", metric.date, unit: .day),
+                            y: .value("Active Minutes", metric.activeMinutes)
+                        )
+                        .foregroundStyle(.blue)
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [6, 6]))
+                    }
                 }
                 .frame(height: 200)
                 .chartLegend(position: .bottom)
@@ -87,7 +97,7 @@ struct TrendsView: View {
                 ContentUnavailableView("No heart rate data", systemImage: "heart.slash", description: Text("Grant access to Heart data to view resting and peak trends."))
             } else {
                 Chart {
-                    ForEach(metrics.chronologicallyAscending) { metric in
+                    ForEach(Array(ascendingMetrics.enumerated()), id: \.offset) { _, metric in
                         if let resting = metric.restingHeartRate {
                             LineMark(
                                 x: .value("Date", metric.date, unit: .day),
@@ -126,47 +136,60 @@ struct TrendsView: View {
             if metrics.isEmpty {
                 ContentUnavailableView("No sleep tracked", systemImage: "zzz", description: Text("Sleep data from Health will appear here."))
             } else {
-                Chart {
-                    ForEach(metrics.chronologicallyAscending) { metric in
-                        if let hours = metric.sleepHours {
-                            BarMark(
-                                x: .value("Date", metric.date, unit: .day),
-                                y: .value("Hours", hours)
-                            )
-                            .foregroundStyle(by: .value("Series", "Sleep Hours"))
-                        }
-                        if let efficiency = metric.sleepEfficiency {
-                            LineMark(
-                                x: .value("Date", metric.date, unit: .day),
-                                y: .value("Efficiency", efficiency * 100)
-                            )
-                            .foregroundStyle(by: .value("Series", "Efficiency %"))
-                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
-                            .yAxis(.trailing)
-                        }
-                    }
-                }
-                .chartYAxis {
-                    AxisMarks(position: .leading)
-                }
-                .chartYAxis(.trailing) {
-                    AxisMarks { value in
-                        if let percent = value.as(Double.self) {
-                            AxisValueLabel("\(percent.formatted(.number.precision(.fractionLength(0))))%")
-                        }
-                    }
-                }
-                .frame(height: 200)
-                .chartLegend(position: .bottom)
-                .chartForegroundStyleScale([
-                    "Sleep Hours": Color.indigo.opacity(0.7),
-                    "Efficiency %": .orange
-                ])
-                Text("Target \(WellnessBenchmarks.recommendedSleepHours.lowerBound.formatted(.number.precision(.fractionLength(1))))–\(WellnessBenchmarks.recommendedSleepHours.upperBound.formatted(.number.precision(.fractionLength(1)))) hours per night for optimal recovery.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                sleepChart
+                sleepFooter
             }
         }
+    }
+
+    private var sleepChart: some View {
+        let hourPoints = Array(ascendingMetrics.enumerated()).compactMap { (idx, m) -> (offset: Int, date: Date, hours: Double)? in
+            guard let h = m.sleepHours else { return nil }
+            return (offset: idx, date: m.date, hours: h)
+        }
+        let efficiencyPoints = Array(ascendingMetrics.enumerated()).compactMap { (idx, m) -> (offset: Int, date: Date, efficiencyPct: Double)? in
+            guard let e = m.sleepEfficiency else { return nil }
+            return (offset: idx, date: m.date, efficiencyPct: e * 100)
+        }
+        return Chart {
+            ForEach(hourPoints, id: \.offset) { pt in
+                BarMark(
+                    x: .value("Date", pt.date, unit: .day),
+                    y: .value("Hours", pt.hours)
+                )
+                .foregroundStyle(by: .value("Series", "Sleep Hours"))
+            }
+            ForEach(efficiencyPoints, id: \.offset) { pt in
+                LineMark(
+                    x: .value("Date", pt.date, unit: .day),
+                    y: .value("Efficiency", pt.efficiencyPct)
+                )
+                .foregroundStyle(by: .value("Series", "Efficiency %"))
+                .lineStyle(StrokeStyle(lineWidth: 2, dash: [4, 4]))
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading)
+        }
+        .chartYAxis {
+            AxisMarks(position: .trailing) { value in
+                if let percent = value.as(Double.self) {
+                    AxisValueLabel("\(percent.formatted(.number.precision(.fractionLength(0))))%")
+                }
+            }
+        }
+        .frame(height: 200)
+        .chartLegend(position: .bottom)
+        .chartForegroundStyleScale([
+            "Sleep Hours": Color.indigo.opacity(0.7),
+            "Efficiency %": .orange
+        ])
+    }
+
+    private var sleepFooter: some View {
+        Text("Target \(WellnessBenchmarks.recommendedSleepHours.lowerBound.formatted(.number.precision(.fractionLength(1))))–\(WellnessBenchmarks.recommendedSleepHours.upperBound.formatted(.number.precision(.fractionLength(1)))) hours per night for optimal recovery.")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
     }
 
     private var vo2Section: some View {
@@ -177,7 +200,7 @@ struct TrendsView: View {
                 ContentUnavailableView("No VO₂ Max samples", systemImage: "lungs.slash", description: Text("Cardiorespiratory fitness readings appear once captured by your Apple Watch."))
             } else {
                 Chart {
-                    ForEach(metrics.chronologicallyAscending) { metric in
+                    ForEach(Array(ascendingMetrics.enumerated()), id: \.offset) { _, metric in
                         if let value = metric.vo2Max {
                             LineMark(
                                 x: .value("Date", metric.date, unit: .day),
@@ -233,16 +256,10 @@ struct TrendsView: View {
     }
 }
 
-private extension Collection where Element == HealthMetric {
-    var chronologicallyAscending: [HealthMetric] {
-        sorted(by: { $0.date < $1.date })
-    }
-}
-
-private struct WorkoutRow: View {
+struct WorkoutRow: View {
     let workout: Workout
 
-    private var durationFormatter: DateComponentsFormatter {
+    var durationFormatter: DateComponentsFormatter {
         let formatter = DateComponentsFormatter()
         formatter.allowedUnits = [.hour, .minute]
         formatter.unitsStyle = .abbreviated

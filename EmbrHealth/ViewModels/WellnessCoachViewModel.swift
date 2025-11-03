@@ -11,9 +11,9 @@ final class WellnessCoachViewModel: ObservableObject {
     private let aiService: WellnessAIService
     private let summaryBuilder: WellnessSummaryBuilder
 
-    init(aiService: WellnessAIService = WellnessAIService(), summaryBuilder: WellnessSummaryBuilder = WellnessSummaryBuilder()) {
-        self.aiService = aiService
-        self.summaryBuilder = summaryBuilder
+    init(aiService: WellnessAIService? = nil, summaryBuilder: WellnessSummaryBuilder? = nil) {
+        self.aiService = aiService ?? WellnessAIService()
+        self.summaryBuilder = summaryBuilder ?? WellnessSummaryBuilder()
         bootstrap()
     }
 
