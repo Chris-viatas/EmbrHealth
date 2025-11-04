@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import EmbrHealth
 
@@ -125,34 +126,21 @@ final class WellnessAIServiceTests: XCTestCase {
         XCTAssertTrue(response.hasPrefix("Here's a local summary while the network is offline"))
         wait(for: [expectation], timeout: 0.1)
     }
-}
 
-private final class MockURLProtocol: URLProtocol {
-    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+    func testDefaultApiKeyProviderReadsEnvironmentVariable() {
+        let key = "OPENAI_API_KEY"
+        let originalValue = getenv(key).flatMap { String(cString: $0) }
+        setenv(key, "  env-key  ", 1)
 
-    override class func canInit(with request: URLRequest) -> Bool {
-        true
-    }
-
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-        request
-    }
-
-    override func startLoading() {
-        guard let handler = MockURLProtocol.requestHandler else {
-            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
-            return
+        var service = WellnessAIService()
+        defer {
+            if let originalValue {
+                setenv(key, originalValue, 1)
+            } else {
+                unsetenv(key)
+            }
         }
 
-        do {
-            let (response, data) = try handler(request)
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
-        } catch {
-            client?.urlProtocol(self, didFailWithError: error)
-        }
+        XCTAssertEqual(service.apiKeyProvider(), "env-key")
     }
-
-    override func stopLoading() {}
 }
