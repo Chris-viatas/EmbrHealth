@@ -7,6 +7,8 @@ final class UserProfile {
     var age: Int?
     var height: Double?
     var weight: Double?
+    var preferredHeightUnit: HeightUnit = .centimeters
+    var preferredWeightUnit: WeightUnit = .kilograms
     var preferredHeightUnit: HeightUnit
     var preferredWeightUnit: WeightUnit
     var gender: String?
