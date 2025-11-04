@@ -2,10 +2,11 @@ import Foundation
 import XCTest
 @testable import EmbrHealth
 
+@MainActor
 final class WellnessAIServiceTests: XCTestCase {
     override func tearDown() {
         super.tearDown()
-        MockURLProtocol.requestHandler = nil
+        TestURLProtocol.requestHandler = nil
     }
 
     func testRespondIncludesConversationHistoryAndParsesOutput() async throws {
@@ -23,7 +24,7 @@ final class WellnessAIServiceTests: XCTestCase {
         let responseData = try JSONSerialization.data(withJSONObject: responseJSON)
 
         var capturedRequest: URLRequest?
-        MockURLProtocol.requestHandler = { request in
+        TestURLProtocol.requestHandler = { request in
             capturedRequest = request
             let url = request.url ?? URL(string: "https://api.openai.com/v1/responses")!
             let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
@@ -31,7 +32,7 @@ final class WellnessAIServiceTests: XCTestCase {
         }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [MockURLProtocol.self]
+        configuration.protocolClasses = [TestURLProtocol.self]
         let session = URLSession(configuration: configuration)
 
         var service = WellnessAIService()
@@ -93,7 +94,7 @@ final class WellnessAIServiceTests: XCTestCase {
     func testRespondFallsBackWhenApiKeyUnavailable() async throws {
         let expectation = XCTestExpectation(description: "No network call should be made")
         expectation.isInverted = true
-        MockURLProtocol.requestHandler = { _ in
+        TestURLProtocol.requestHandler = { _ in
             expectation.fulfill()
             let url = URL(string: "https://api.openai.com/v1/responses")!
             let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!
@@ -101,7 +102,7 @@ final class WellnessAIServiceTests: XCTestCase {
         }
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [MockURLProtocol.self]
+        configuration.protocolClasses = [TestURLProtocol.self]
         let session = URLSession(configuration: configuration)
 
         var service = WellnessAIService()
@@ -124,7 +125,7 @@ final class WellnessAIServiceTests: XCTestCase {
 
         let response = try await service.respond(to: "How am I doing?", history: [], snapshot: snapshot)
         XCTAssertTrue(response.hasPrefix("Here's a local summary while the network is offline"))
-        wait(for: [expectation], timeout: 0.1)
+        await fulfillment(of: [expectation], timeout: 0.1)
     }
 
     func testDefaultApiKeyProviderReadsEnvironmentVariable() {
@@ -145,10 +146,34 @@ final class WellnessAIServiceTests: XCTestCase {
     }
 }
 
-private final class MockURLProtocol: URLProtocol {
+private final class TestURLProtocol: URLProtocol {
     static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
 
     override class func canInit(with request: URLRequest) -> Bool {
         true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        guard let handler = Self.requestHandler else {
+            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+            return
+        }
+
+        do {
+            let (response, data) = try handler(request)
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            client?.urlProtocol(self, didLoad: data)
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
+    }
+
+    override func stopLoading() {
+        // No-op: requests are fulfilled immediately in tests.
     }
 }
