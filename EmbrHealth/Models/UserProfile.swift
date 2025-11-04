@@ -9,6 +9,8 @@ final class UserProfile {
     var weight: Double?
     var preferredHeightUnit: HeightUnit = .centimeters
     var preferredWeightUnit: WeightUnit = .kilograms
+    var preferredHeightUnit: HeightUnit
+    var preferredWeightUnit: WeightUnit
     var gender: String?
     var primaryGoal: GoalCategory
     var prefersNotifications: Bool
