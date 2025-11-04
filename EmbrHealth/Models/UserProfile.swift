@@ -7,6 +7,8 @@ final class UserProfile {
     var age: Int?
     var height: Double?
     var weight: Double?
+    var preferredHeightUnit: HeightUnit
+    var preferredWeightUnit: WeightUnit
     var gender: String?
     var primaryGoal: GoalCategory
     var prefersNotifications: Bool
@@ -17,6 +19,8 @@ final class UserProfile {
         age: Int? = nil,
         height: Double? = nil,
         weight: Double? = nil,
+        preferredHeightUnit: HeightUnit = .centimeters,
+        preferredWeightUnit: WeightUnit = .kilograms,
         gender: String? = nil,
         primaryGoal: GoalCategory = .steps,
         prefersNotifications: Bool = false,
@@ -26,6 +30,8 @@ final class UserProfile {
         self.age = age
         self.height = height
         self.weight = weight
+        self.preferredHeightUnit = preferredHeightUnit
+        self.preferredWeightUnit = preferredWeightUnit
         self.gender = gender
         self.primaryGoal = primaryGoal
         self.prefersNotifications = prefersNotifications

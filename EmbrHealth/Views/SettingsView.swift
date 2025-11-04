@@ -196,12 +196,151 @@ private struct ProfileForm: View {
         Stepper(value: Binding(get: { profile.age ?? 25 }, set: { profile.age = $0 }), in: 13...100) {
             Text("Age: \((profile.age ?? 25).formatted())")
         }
-        Stepper(value: Binding(get: { profile.height ?? 170 }, set: { profile.height = $0 }), in: 100...220, step: 1) {
-            Text("Height: \((profile.height ?? 170).formatted()) cm")
+        Picker("Height Units", selection: $profile.preferredHeightUnit) {
+            ForEach(HeightUnit.allCases) { unit in
+                Text(unit.displayName).tag(unit)
+            }
         }
-        Stepper(value: Binding(get: { profile.weight ?? 70 }, set: { profile.weight = $0 }), in: 40...200, step: 1) {
-            Text("Weight: \((profile.weight ?? 70).formatted()) kg")
+        .pickerStyle(.segmented)
+
+        switch profile.preferredHeightUnit {
+        case .centimeters:
+            Stepper(value: heightMetricBinding, in: 100...220, step: 1) {
+                let heightCentimeters = heightMetricBinding.wrappedValue
+                let components = heightComponents(from: heightCentimeters)
+                Text("Height: \(formattedNumber(heightCentimeters)) cm (\(components.feet) ft \(components.inches) in)")
+            }
+        case .imperial:
+            Stepper(value: heightFeetBinding, in: 3...8, step: 1) {
+                Text("Feet: \(heightFeetBinding.wrappedValue) ft")
+            }
+            Stepper(value: heightInchesBinding, in: 0...11, step: 1) {
+                Text("Inches: \(heightInchesBinding.wrappedValue) in")
+            }
+            Text(imperialHeightSummary)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
+
+        Picker("Weight Units", selection: $profile.preferredWeightUnit) {
+            ForEach(WeightUnit.allCases) { unit in
+                Text(unit.displayName).tag(unit)
+            }
+        }
+        .pickerStyle(.segmented)
+
+        Stepper(value: weightBinding, in: weightRange, step: weightStep) {
+            Text(weightSummary)
+        }
+    }
+}
+
+private extension ProfileForm {
+    var defaultHeightCentimeters: Double { 170 }
+    var defaultWeightKilograms: Double { 70 }
+
+    var heightMetricBinding: Binding<Double> {
+        Binding(
+            get: { profile.height ?? defaultHeightCentimeters },
+            set: { profile.height = $0 }
+        )
+    }
+
+    var heightFeetBinding: Binding<Int> {
+        Binding(
+            get: {
+                let components = heightComponents(from: profile.height ?? defaultHeightCentimeters)
+                return components.feet
+            },
+            set: { newFeet in
+                let current = heightComponents(from: profile.height ?? defaultHeightCentimeters)
+                profile.height = centimeters(fromFeet: newFeet, inches: current.inches)
+            }
+        )
+    }
+
+    var heightInchesBinding: Binding<Int> {
+        Binding(
+            get: {
+                let components = heightComponents(from: profile.height ?? defaultHeightCentimeters)
+                return components.inches
+            },
+            set: { newInches in
+                let current = heightComponents(from: profile.height ?? defaultHeightCentimeters)
+                let clamped = min(max(newInches, 0), 11)
+                profile.height = centimeters(fromFeet: current.feet, inches: clamped)
+            }
+        )
+    }
+
+    var weightBinding: Binding<Double> {
+        Binding(
+            get: {
+                let kilograms = profile.weight ?? defaultWeightKilograms
+                return profile.preferredWeightUnit.fromBase(kilograms)
+            },
+            set: { newValue in
+                profile.weight = profile.preferredWeightUnit.toBase(newValue)
+            }
+        )
+    }
+
+    var weightRange: ClosedRange<Double> {
+        switch profile.preferredWeightUnit {
+        case .kilograms:
+            return 40...200
+        case .pounds:
+            let lower = WeightUnit.pounds.fromBase(40)
+            let upper = WeightUnit.pounds.fromBase(200)
+            return lower...upper
+        }
+    }
+
+    var weightStep: Double {
+        switch profile.preferredWeightUnit {
+        case .kilograms:
+            return 1
+        case .pounds:
+            return 1
+        }
+    }
+
+    var weightSummary: String {
+        let kilograms = profile.weight ?? defaultWeightKilograms
+        let pounds = WeightUnit.pounds.fromBase(kilograms)
+        switch profile.preferredWeightUnit {
+        case .kilograms:
+            return "Weight: \(formattedNumber(kilograms)) kg (\(formattedNumber(pounds)) lbs)"
+        case .pounds:
+            return "Weight: \(formattedNumber(pounds)) lbs (\(formattedNumber(kilograms)) kg)"
+        }
+    }
+
+    var imperialHeightSummary: String {
+        let centimeters = profile.height ?? defaultHeightCentimeters
+        let components = heightComponents(from: centimeters)
+        return "Height: \(components.feet) ft \(components.inches) in (\(formattedNumber(centimeters)) cm)"
+    }
+
+    func heightComponents(from centimeters: Double) -> (feet: Int, inches: Int) {
+        let totalInches = centimeters / 2.54
+        var feet = Int(totalInches / 12)
+        let remainingInches = totalInches - Double(feet * 12)
+        var inches = Int(round(remainingInches))
+        if inches == 12 {
+            feet += 1
+            inches = 0
+        }
+        return (feet, inches)
+    }
+
+    func centimeters(fromFeet feet: Int, inches: Int) -> Double {
+        let totalInches = Double(feet * 12 + inches)
+        return totalInches * 2.54
+    }
+
+    func formattedNumber(_ value: Double) -> String {
+        value.formatted(.number.precision(.fractionLength(0...1)))
     }
 }
 
