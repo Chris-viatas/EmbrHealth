@@ -30,6 +30,12 @@ struct WellnessAIService {
             if !trimmed.isEmpty {
                 return trimmed
             }
+        if let envValue = ProcessInfo.processInfo.environment[Self.apiKeyEnvironmentVariable], !envValue.isEmpty {
+            return envValue
+        }
+
+        if let plistValue = Bundle.main.object(forInfoDictionaryKey: Self.apiKeyEnvironmentVariable) as? String, !plistValue.isEmpty {
+            return plistValue
         }
 
         return nil

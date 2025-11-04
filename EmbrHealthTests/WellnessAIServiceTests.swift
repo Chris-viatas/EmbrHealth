@@ -130,6 +130,31 @@ final class WellnessAIServiceTests: XCTestCase {
     func testDefaultApiKeyProviderReadsEnvironmentVariable() {
         let key = "OPENAI_API_KEY"
         let originalValue = getenv(key).flatMap { String(cString: $0) }
+        setenv(key, "env-key", 1)
+
+        var service = WellnessAIService()
+        defer {
+            if let originalValue {
+                setenv(key, originalValue, 1)
+            } else {
+                unsetenv(key)
+            }
+        }
+
+        XCTAssertEqual(service.apiKeyProvider(), "env-key")
+    }
+}
+
+private final class MockURLProtocol: URLProtocol {
+    static var requestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data))?
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    func testDefaultApiKeyProviderReadsEnvironmentVariable() {
+        let key = "OPENAI_API_KEY"
+        let originalValue = getenv(key).flatMap { String(cString: $0) }
         setenv(key, "  env-key  ", 1)
 
         var service = WellnessAIService()
