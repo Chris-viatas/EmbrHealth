@@ -18,8 +18,18 @@ struct WellnessAIService {
         }
     }
 
+    private static let apiKeyEnvironmentVariable = "OPENAI_API_KEY"
+
     var apiKeyProvider: () -> String? = {
-        ProcessInfo.processInfo.environment["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"]
+        if let envValue = ProcessInfo.processInfo.environment[Self.apiKeyEnvironmentVariable], !envValue.isEmpty {
+            return envValue
+        }
+
+        if let plistValue = Bundle.main.object(forInfoDictionaryKey: Self.apiKeyEnvironmentVariable) as? String, !plistValue.isEmpty {
+            return plistValue
+        }
+
+        return nil
     }
 
     var urlSession: URLSession = .shared

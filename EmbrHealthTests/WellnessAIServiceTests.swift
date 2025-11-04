@@ -1,3 +1,4 @@
+import Foundation
 import XCTest
 @testable import EmbrHealth
 
@@ -124,6 +125,23 @@ final class WellnessAIServiceTests: XCTestCase {
         let response = try await service.respond(to: "How am I doing?", history: [], snapshot: snapshot)
         XCTAssertTrue(response.hasPrefix("Here's a local summary while the network is offline"))
         wait(for: [expectation], timeout: 0.1)
+    }
+
+    func testDefaultApiKeyProviderReadsEnvironmentVariable() {
+        let key = "OPENAI_API_KEY"
+        let originalValue = getenv(key).flatMap { String(cString: $0) }
+        setenv(key, "env-key", 1)
+
+        var service = WellnessAIService()
+        defer {
+            if let originalValue {
+                setenv(key, originalValue, 1)
+            } else {
+                unsetenv(key)
+            }
+        }
+
+        XCTAssertEqual(service.apiKeyProvider(), "env-key")
     }
 }
 
