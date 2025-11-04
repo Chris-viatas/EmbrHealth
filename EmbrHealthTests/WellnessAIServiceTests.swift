@@ -152,25 +152,20 @@ private final class MockURLProtocol: URLProtocol {
         true
     }
 
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-        request
-    }
+    func testDefaultApiKeyProviderReadsEnvironmentVariable() {
+        let key = "OPENAI_API_KEY"
+        let originalValue = getenv(key).flatMap { String(cString: $0) }
+        setenv(key, "  env-key  ", 1)
 
-    override func startLoading() {
-        guard let handler = MockURLProtocol.requestHandler else {
-            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
-            return
+        var service = WellnessAIService()
+        defer {
+            if let originalValue {
+                setenv(key, originalValue, 1)
+            } else {
+                unsetenv(key)
+            }
         }
 
-        do {
-            let (response, data) = try handler(request)
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
-        } catch {
-            client?.urlProtocol(self, didFailWithError: error)
-        }
+        XCTAssertEqual(service.apiKeyProvider(), "env-key")
     }
-
-    override func stopLoading() {}
 }

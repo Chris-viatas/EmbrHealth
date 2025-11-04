@@ -32,13 +32,14 @@ final class WellnessCoachViewModel: ObservableObject {
         guard !trimmed.isEmpty else { return }
         errorMessage = nil
         let userMessage = WellnessChatMessage(sender: .user, text: trimmed)
+        let history = messages
         messages.append(userMessage)
         isProcessing = true
 
         let snapshot = summaryBuilder.snapshot(metrics: metrics, goals: goals, workouts: workouts)
 
         do {
-            let response = try await aiService.respond(to: trimmed, history: messages, snapshot: snapshot)
+            let response = try await aiService.respond(to: trimmed, history: history, snapshot: snapshot)
             messages.append(WellnessChatMessage(sender: .coach, text: response))
         } catch {
             errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
