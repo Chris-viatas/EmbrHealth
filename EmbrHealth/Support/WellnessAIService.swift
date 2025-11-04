@@ -19,7 +19,17 @@ struct WellnessAIService {
     }
 
     var apiKeyProvider: () -> String? = {
-        ProcessInfo.processInfo.environment["API KEY"]
+        if let envValue = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !envValue.isEmpty {
+            return envValue
+        }
+
+        if let plistValue = Bundle.main.object(forInfoDictionaryKey: "OPENAI_API_KEY") as? String {
+            let trimmed = plistValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        }
+
+        return nil
     }
 
     var urlSession: URLSession = .shared
