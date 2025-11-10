@@ -71,6 +71,7 @@ struct WellnessAIService {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("responses=v1", forHTTPHeaderField: "OpenAI-Beta")
         request.httpBody = requestData
 
         do {
