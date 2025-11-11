@@ -19,6 +19,7 @@ struct CoachView: View {
     private var privacySettings: [PrivacySettings]
 
     @State private var messageText = ""
+    @State private var selectedSymptoms: Set<Symptom> = []
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -64,6 +65,8 @@ struct CoachView: View {
 
     private var conversationView: some View {
         VStack(spacing: 0) {
+            symptomSelector
+            Divider()
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 12) {
@@ -110,12 +113,31 @@ struct CoachView: View {
         privacySettings.first?.allowsWellnessAI == true
     }
 
+    private var symptomSelector: some View {
+        SymptomSelector(
+            symptoms: Symptom.allCases,
+            selectedSymptoms: $selectedSymptoms,
+            isProcessing: viewModel.isProcessing,
+            onSubmit: sendSymptoms
+        )
+        .padding([.horizontal, .top])
+    }
+
     private func sendMessage() {
         let text = messageText
         messageText = ""
         isInputFocused = false
         Task {
             await viewModel.send(text, metrics: metrics, goals: goals, workouts: workouts)
+        }
+    }
+
+    private func sendSymptoms() {
+        guard !selectedSymptoms.isEmpty else { return }
+        let summary = SymptomFormatter.summary(for: selectedSymptoms)
+        selectedSymptoms.removeAll()
+        Task {
+            await viewModel.send(summary, metrics: metrics, goals: goals, workouts: workouts)
         }
     }
 
